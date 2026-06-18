@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uydu Link Budget Hesaplayıcı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E1318;
+  --panel:#161D25;
+  --raised:#1D262F;
+  --line:#2A343F;
+  --line-soft:#222C35;
+  --ink:#E9ECEF;
+  --muted:#8A949F;
+  --faint:#5E6770;
+  --amber:#FFB12E;      /* uplink / phosphor readout */
+  --cyan:#54CFE0;       /* downlink */
+  --good:#67D08A;
+  --bad:#FF6F6B;
+  --display:'Space Grotesk',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--body);font-size:15px;line-height:1.5;
+  background-image:radial-gradient(circle at 20% -10%,rgba(255,177,46,.05),transparent 40%),
+                   radial-gradient(circle at 90% 0%,rgba(84,207,224,.05),transparent 45%);
+}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 20px 64px}
+
+header{margin-bottom:28px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);margin:0 0 10px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;margin:0;line-height:1.05}
+.sub{color:var(--muted);margin:10px 0 0;max-width:62ch;font-size:14px}
+
+/* layout */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:18px 18px 16px}
+.card h2{font-family:var(--display);font-weight:500;font-size:13px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 14px;color:var(--ink);display:flex;align-items:center;gap:9px}
+.tag{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:5px;letter-spacing:.06em}
+.tag.up{background:rgba(255,177,46,.13);color:var(--amber)}
+.tag.dn{background:rgba(84,207,224,.13);color:var(--cyan)}
+.tag.gm{background:rgba(138,148,159,.13);color:var(--muted)}
+
+/* fields */
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+.field:last-child{border-bottom:0}
+.field label{color:var(--muted);font-size:13px;flex:1;min-width:0}
+.field label small{display:block;color:var(--faint);font-size:11px;font-family:var(--mono)}
+.field .unit{font-family:var(--mono);font-size:11px;color:var(--faint);width:46px;text-align:right;flex:none}
+input[type=number],select{
+  width:108px;flex:none;background:var(--raised);border:1px solid var(--line);color:var(--ink);
+  font-family:var(--mono);font-size:14px;padding:7px 9px;border-radius:7px;text-align:right;
+}
+select{text-align:left;width:130px}
+input[type=number]:focus,select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,177,46,.12)}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+.derived{font-family:var(--mono);font-size:13px;color:var(--cyan);width:108px;text-align:right;flex:none}
+
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--amber);width:15px;height:15px}
+
+/* readout panel */
+.readout{background:linear-gradient(180deg,#10161C,#0C1116);border:1px solid var(--line);border-radius:12px;padding:20px;margin-top:18px;position:relative;overflow:hidden}
+.readout::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,.012) 3px,rgba(255,255,255,.012) 4px);pointer-events:none}
+.readout h2{font-family:var(--display);font-weight:500;font-size:13px;letter-spacing:.04em;text-transform:uppercase;margin:0 0 16px;color:var(--muted)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{padding:2px 0}
+.metric .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.metric .v{font-family:var(--mono);font-weight:500;font-size:24px;color:var(--amber);letter-spacing:-.01em;line-height:1}
+.metric .v small{font-size:13px;color:var(--muted);font-weight:400}
+.metric.cyan .v{color:var(--cyan)}
+
+.verdict{margin-top:18px;padding:14px 16px;border-radius:9px;display:flex;align-items:baseline;justify-content:space-between;gap:14px;font-family:var(--mono)}
+.verdict.ok{background:rgba(103,208,138,.1);border:1px solid rgba(103,208,138,.3)}
+.verdict.no{background:rgba(255,111,107,.1);border:1px solid rgba(255,111,107,.3)}
+.verdict .vlabel{font-size:12px;letter-spacing:.05em;text-transform:uppercase}
+.verdict .vside{display:flex;flex-direction:column;gap:4px}
+.verdict .vsub{font-size:12px;color:var(--muted);letter-spacing:.02em;text-transform:none}
+.verdict.ok .vlabel{color:var(--good)} .verdict.no .vlabel{color:var(--bad)}
+.verdict .vnum{font-size:30px;font-weight:600}
+.verdict.ok .vnum{color:var(--good)} .verdict.no .vnum{color:var(--bad)}
+
+/* path diagram */
+.diagram{margin-top:18px}
+.diagram svg{width:100%;height:auto;display:block}
+
+/* waterfall table */
+.table-card{margin-top:18px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+th,td{text-align:right;padding:6px 10px;border-bottom:1px solid var(--line-soft)}
+th:first-child,td:first-child{text-align:left;color:var(--muted);font-family:var(--body)}
+thead th{color:var(--faint);font-weight:500;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+td.up{color:var(--amber)} td.dn{color:var(--cyan)}
+td.sum{color:var(--ink);font-weight:600;border-top:1px solid var(--line)}
+tr.subtotal td{border-top:1px solid var(--line);color:var(--ink);font-weight:600}
+
+details{margin-top:18px;background:var(--panel);border:1px solid var(--line-soft);border-radius:12px;padding:0 18px}
+summary{cursor:pointer;padding:16px 0;font-family:var(--display);font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+ ";color:var(--amber);font-family:var(--mono)}
+details[open] summary::before{content:"− "}
+details .body{padding:0 0 18px;color:var(--muted);font-size:13.5px;line-height:1.7}
+details .body code{font-family:var(--mono);background:var(--raised);padding:1px 6px;border-radius:4px;color:var(--cyan);font-size:12.5px}
+details .body .eq{display:block;margin:10px 0;padding:10px 14px;background:var(--raised);border-left:2px solid var(--amber);border-radius:0 6px 6px 0;font-family:var(--mono);font-size:12.5px;color:var(--ink);overflow-x:auto}
+details .body p{margin:0 0 12px}
+footer{margin-top:32px;color:var(--faint);font-size:12px;line-height:1.6}
+footer a{color:var(--muted)}
+.note{font-size:12px;color:var(--faint);margin-top:6px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">GEO · Uplink / Downlink · dB Bütçesi</p>
+  <h1>Uydu Link Budget Hesaplayıcı</h1>
+  <p class="sub">Bir GEO uydu bağlantısının uçtan uca dB bütçesini hesaplar: yer istasyonu EIRP'si, serbest uzay yol kaybı, G/T, taşıyıcı/gürültü oranları ve link marjı. Tüm değerler girişler değiştikçe anında güncellenir. Geometri bloğu enlem/boylamdan elevasyon, azimut ve eğik mesafeyi türetir.</p>
+</header>
+
+<div class="grid">
+
+  <!-- GEOMETRY -->
+  <div class="card">
+    <h2>Geometri <span class="tag gm">GEO</span></h2>
+    <div class="field"><label>Yer ist. enlemi <small>+ kuzey</small></label><input type="number" id="esLat" value="40" step="0.1"><span class="unit">°</span></div>
+    <div class="field"><label>Yer ist. boylamı <small>+ doğu</small></label><input type="number" id="esLon" value="33" step="0.1"><span class="unit">°</span></div>
+    <div class="field"><label>Uydu boylamı <small>GEO, + doğu</small></label><input type="number" id="satLon" value="42" step="0.1"><span class="unit">°</span></div>
+    <div class="field"><label>Elevasyon açısı</label><span class="derived" id="oEl">–</span><span class="unit">°</span></div>
+    <div class="field"><label>Azimut (kuzeyden)</label><span class="derived" id="oAz">–</span><span class="unit">°</span></div>
+    <div class="field"><label>Eğik mesafe</label><span class="derived" id="oRange">–</span><span class="unit">km</span></div>
+  </div>
+
+  <!-- CARRIER / MODEM -->
+  <div class="card">
+    <h2>Taşıyıcı &amp; Modem <span class="tag gm" id="stdTag">DVB-S2</span></h2>
+    <div class="field"><label>Sembol hızı (R<sub>s</sub>)</label><input type="number" id="symRate" value="30" step="0.1"><span class="unit">MBd</span></div>
+    <div class="field"><label>Roll-off (α)</label><input type="number" id="rolloff" value="0.35" step="0.05"><span class="unit"></span></div>
+    <div class="field"><label>Standart <small id="basisNote">marj Eₛ/N₀ tabanlı</small></label>
+      <select id="standard">
+        <option value="dvbs2" selected>DVB-S2 · Es/N₀</option>
+        <option value="dvbs">DVB-S · Eb/N₀</option>
+        <option value="manual">Manuel</option>
+      </select>
+    </div>
+    <div class="field" id="rowModcod"><label>ModCod <small id="modNote">mod · kod oranı</small></label>
+      <select id="modcod"></select>
+    </div>
+    <div class="field"><label>Spektral verim (S<sub>eff</sub>) <small>bilgi bit/sym</small></label><input type="number" id="seff" value="2.228124" step="0.0001"><span class="unit"></span></div>
+    <div class="field"><label id="targetLabel">Gerekli E<sub>s</sub>/N₀</label><input type="number" id="target" value="7.91" step="0.01"><span class="unit">dB</span></div>
+    <div class="field" id="rowBasis" style="display:none"><label>Marj temeli</label>
+      <select id="basis">
+        <option value="es">Eₛ/N₀</option>
+        <option value="eb">E_b/N₀</option>
+      </select>
+    </div>
+    <div class="field"><label class="toggle"><input type="checkbox" id="ciOn"> Girişim ekle (C/I)</label><input type="number" id="ciVal" value="20" step="0.5"><span class="unit">dB</span></div>
+  </div>
+
+  <!-- UPLINK -->
+  <div class="card">
+    <h2>Uplink (yer → uydu) <span class="tag up">↑</span></h2>
+    <div class="field"><label>Uplink frekansı</label><input type="number" id="fUp" value="14" step="0.05"><span class="unit">GHz</span></div>
+    <div class="field"><label>HPA çıkış gücü</label><input type="number" id="hpaW" value="200" step="1"><span class="unit">W</span></div>
+    <div class="field"><label>Besleme/dallanma kaybı</label><input type="number" id="feedUp" value="0" step="0.1"><span class="unit">dB</span></div>
+    <div class="field"><label>TX anten çapı (D<sub>tx</sub>)</label><input type="number" id="dish" value="1.2" step="0.1"><span class="unit">m</span></div>
+    <div class="field"><label>TX anten verimi (η<sub>tx</sub>)</label><input type="number" id="eff" value="65" step="1"><span class="unit">%</span></div>
+    <div class="field"><label>Uydu G/T</label><input type="number" id="satGT" value="10" step="0.5"><span class="unit">dB/K</span></div>
+    <div class="field"><label>Atmosfer + yağmur + diğer</label><input type="number" id="lossUp" value="0" step="0.1"><span class="unit">dB</span></div>
+    <div class="field"><label>Yer ist. EIRP</label><span class="derived" id="oEirpUp">–</span><span class="unit">dBW</span></div>
+    <div class="field"><label>Gerekli SFD <small>uydu doyum akı yoğ.</small></label><input type="number" id="sfdReq" value="-90" step="0.5"><span class="unit">dBW/m²</span></div>
+    <div class="field"><label>Uyduya ulaşan PFD</label><span class="derived" id="oSfd">–</span><span class="unit">dBW/m²</span></div>
+    <div class="field"><label>SFD marjı <small>+ doyum, − geri-çekme</small></label><span class="derived" id="oSfdMargin">–</span><span class="unit">dB</span></div>
+  </div>
+
+  <!-- DOWNLINK -->
+  <div class="card">
+    <h2>Downlink (uydu → yer) <span class="tag dn">↓</span></h2>
+    <div class="field"><label>Downlink frekansı</label><input type="number" id="fDn" value="12" step="0.05"><span class="unit">GHz</span></div>
+    <div class="field"><label>Uydu EIRP <small>taşıyıcı başına</small></label><input type="number" id="satEirp" value="44" step="0.5"><span class="unit">dBW</span></div>
+    <div class="field"><label>RX anten çapı (D<sub>rx</sub>)</label><input type="number" id="dishDn" value="0.6" step="0.1"><span class="unit">m</span></div>
+    <div class="field"><label>RX anten verimi (η<sub>rx</sub>)</label><input type="number" id="effDn" value="65" step="1"><span class="unit">%</span></div>
+    <div class="field"><label>Yer ist. sistem sıcaklığı (T<sub>sys</sub>)</label><input type="number" id="tsys" value="125" step="5"><span class="unit">K</span></div>
+    <div class="field"><label>Atmosfer + yağmur + diğer</label><input type="number" id="lossDn" value="0" step="0.1"><span class="unit">dB</span></div>
+    <div class="field"><label>Yer ist. RX kazancı</label><span class="derived" id="oGrx">–</span><span class="unit">dBi</span></div>
+    <div class="field"><label>Yer ist. G/T</label><span class="derived" id="oGtEs">–</span><span class="unit">dB/K</span></div>
+  </div>
+
+</div><!-- /grid -->
+
+<!-- PATH DIAGRAM -->
+<div class="card diagram">
+  <h2>Sinyal yolu</h2>
+  <svg viewBox="0 0 880 230" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
+    <!-- satellite -->
+    <g transform="translate(440,30)">
+      <rect x="-26" y="-14" width="52" height="28" rx="4" fill="#1D262F" stroke="#2A343F"/>
+      <rect x="-46" y="-7" width="16" height="14" rx="2" fill="#222C35"/>
+      <rect x="30" y="-7" width="16" height="14" rx="2" fill="#222C35"/>
+      <text x="0" y="4" fill="#E9ECEF" font-size="10" text-anchor="middle">UYDU</text>
+      <text x="0" y="-22" fill="#8A949F" font-size="9" text-anchor="middle">G/T <tspan id="dSatGT" fill="#FFB12E">–</tspan> · EIRP <tspan id="dSatEirp" fill="#54CFE0">–</tspan></text>
+    </g>
+    <!-- uplink beam -->
+    <line x1="120" y1="180" x2="414" y2="46" stroke="#FFB12E" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.8"/>
+    <polygon points="0,-4 8,0 0,4" fill="#FFB12E" transform="translate(414,46) rotate(204.5)"/>
+    <text x="225" y="100" fill="#FFB12E" font-size="10" text-anchor="middle" transform="rotate(-24.5 225 110)">↑ uplink · L<tspan id="dFsplUp">–</tspan> dB</text>
+    <!-- downlink beam -->
+    <line x1="466" y1="46" x2="760" y2="180" stroke="#54CFE0" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.8"/>
+    <polygon points="0,-4 8,0 0,4" fill="#54CFE0" transform="translate(760,180) rotate(24.5)"/>
+    <text x="655" y="100" fill="#54CFE0" font-size="10" text-anchor="middle" transform="rotate(24.5 655 110)">↓ downlink · L<tspan id="dFsplDn">–</tspan> dB</text>
+    <!-- TX ground station -->
+    <g transform="translate(120,180)">
+      <path d="M-20,0 L20,0 L13,28 L-13,28 Z" fill="#1D262F" stroke="#2A343F"/>
+      <ellipse cx="0" cy="0" rx="20" ry="6" fill="#222C35" stroke="#2A343F"/>
+      <text x="0" y="46" fill="#E9ECEF" font-size="10" text-anchor="middle">TX İSTASYON</text>
+      <text x="0" y="60" fill="#8A949F" font-size="9" text-anchor="middle">EIRP <tspan id="dEirpUp" fill="#FFB12E">–</tspan> dBW</text>
+    </g>
+    <!-- RX ground station -->
+    <g transform="translate(760,180)">
+      <path d="M-20,0 L20,0 L13,28 L-13,28 Z" fill="#1D262F" stroke="#2A343F"/>
+      <ellipse cx="0" cy="0" rx="20" ry="6" fill="#222C35" stroke="#2A343F"/>
+      <text x="0" y="46" fill="#E9ECEF" font-size="10" text-anchor="middle">RX İSTASYON</text>
+      <text x="0" y="60" fill="#8A949F" font-size="9" text-anchor="middle">G/T <tspan id="dGtEs" fill="#54CFE0">–</tspan> dB/K</text>
+    </g>
+  </svg>
+</div>
+
+<!-- READOUT -->
+<div class="readout">
+  <h2>Sonuç paneli</h2>
+  <div class="metrics">
+    <div class="metric"><div class="k">C/N₀ uplink</div><div class="v"><span id="rCn0Up">–</span> <small>dBHz</small></div></div>
+    <div class="metric cyan"><div class="k">C/N₀ downlink</div><div class="v"><span id="rCn0Dn">–</span> <small>dBHz</small></div></div>
+    <div class="metric"><div class="k">C/N₀ toplam</div><div class="v"><span id="rCn0Tot">–</span> <small>dBHz</small></div></div>
+    <div class="metric cyan"><div class="k">İşgal edilen BW</div><div class="v"><span id="rBw">–</span> <small>MHz</small></div></div>
+    <div class="metric"><div class="k">C/N uplink</div><div class="v"><span id="rCnUp">–</span> <small>dB</small></div></div>
+    <div class="metric cyan"><div class="k">C/N downlink</div><div class="v"><span id="rCnDn">–</span> <small>dB</small></div></div>
+    <div class="metric"><div class="k">C/N toplam</div><div class="v"><span id="rCn">–</span> <small>dB</small></div></div>
+    <div class="metric cyan"><div class="k">Bilgi hızı (R<sub>b</sub>)</div><div class="v"><span id="rRb">–</span> <small>Mbps</small></div></div>
+    <div class="metric"><div class="k">Eₛ/N₀ ulaşılan</div><div class="v"><span id="rEs">–</span> <small>dB</small></div></div>
+    <div class="metric cyan"><div class="k">Eb/N₀ ulaşılan</div><div class="v"><span id="rEb">–</span> <small>dB</small></div></div>
+  </div>
+  <div class="verdict ok" id="verdict">
+    <div class="vside">
+      <span class="vlabel" id="vLabel">Link marjı</span>
+      <span class="vsub" id="vSub">gerekli – · ulaşılan –</span>
+    </div>
+    <span class="vnum"><span id="vMargin">–</span> dB</span>
+  </div>
+</div>
+
+<!-- WATERFALL -->
+<div class="card table-card">
+  <h2>dB dökümü (waterfall)</h2>
+  <table>
+    <thead><tr><th>Terim</th><th>Uplink</th><th>Downlink</th></tr></thead>
+    <tbody id="wfBody"></tbody>
+  </table>
+  <p class="note">Pozitif satırlar bütçeye eklenir, negatif satırlar kayıptır. C/N₀ = EIRP − L<sub>fs</sub> − L<sub>atm</sub> + G/T − k.</p>
+</div>
+
+<!-- FORMULAS -->
+<details>
+  <summary>Kullanılan formüller ve varsayımlar</summary>
+  <div class="body">
+    <p><strong>Geometri (küresel Dünya, GEO).</strong> Yer istasyonu ve uydu ECEF vektörlerinden yerel doğu-kuzey-yukarı (ENU) bileşenleri çıkarılır; elevasyon, azimut ve eğik mesafe bunlardan hesaplanır. R<sub>e</sub> = 6378.137 km, GEO yörünge yarıçapı = 42164 km. İstasyon yüksekliği ihmal edilir.</p>
+
+    <p><strong>Anten kazancı.</strong></p>
+    <span class="eq">G(dBi) = 10·log₁₀( η · (π·D·f / c)² )</span>
+    <p>D = çap (m), f = frekans (Hz), η = verim, c = 2.998×10⁸ m/s. Aynı çanak uplink ve downlink frekanslarında farklı kazanç verir.</p>
+
+    <p><strong>EIRP.</strong></p>
+    <span class="eq">EIRP = P<sub>HPA</sub>(dBW) − L<sub>besleme</sub> + G<sub>tx</sub></span>
+
+    <p><strong>Uyduya ulaşan güç akı yoğunluğu (PFD) ve SFD marjı.</strong> Yayılım kaybı = 10·log₁₀(4π·d²), d metre cinsinden.</p>
+    <span class="eq">PFD = EIRP − 10·log₁₀(4π·d²) − L<sub>atm</sub>   ·   SFD marjı = PFD − SFD<sub>gerekli</sub></span>
+    <p>SFD<sub>gerekli</sub>, transponderı doyuma sürmek için gereken akı yoğunluğudur. Marj pozitifse uydu doyuma yaklaşır; negatifse o kadar dB giriş geri-çekmesi (input back-off) var demektir.</p>
+
+    <p><strong>Serbest uzay yol kaybı (FSPL).</strong></p>
+    <span class="eq">L<sub>fs</sub>(dB) = 92.45 + 20·log₁₀(d<sub>km</sub>) + 20·log₁₀(f<sub>GHz</sub>)</span>
+
+    <p><strong>Taşıyıcı/gürültü yoğunluğu.</strong> Boltzmann sabiti k = −228.6 dBW/(K·Hz).</p>
+    <span class="eq">C/N₀(dBHz) = EIRP − L<sub>fs</sub> − L<sub>atm</sub> + (G/T) − k</span>
+    <p>Yer istasyonu G/T = G<sub>rx</sub> − 10·log₁₀(T<sub>sys</sub>). Uydu G/T doğrudan girilir.</p>
+
+    <p><strong>Bağlantıların birleştirilmesi.</strong> Uplink, downlink ve (varsa) girişim doğrusal alanda toplanır:</p>
+    <span class="eq">(C/N₀)<sub>top</sub> = −10·log₁₀( 10^(−C/N₀,up/10) + 10^(−C/N₀,dn/10) + 10^(−C/I₀/10) )</span>
+    <p>Girişim için C/I₀ = C/I + 10·log₁₀(B). Girişim kapalıyken bu terim ihmal edilir.</p>
+
+    <p><strong>Modem metrikleri.</strong> Sembol hızı R<sub>s</sub>, bilgi hızı R<sub>b</sub> = R<sub>s</sub>·log₂(M)·(kod oranı), işgal edilen bant B = R<sub>s</sub>·(1+α).</p>
+    <span class="eq">Eₛ/N₀ = C/N₀ − 10·log₁₀(R<sub>s</sub>)   ·   Eb/N₀ = C/N₀ − 10·log₁₀(R<sub>b</sub>)   ·   C/N = C/N₀ − 10·log₁₀(B)</span>
+    <span class="eq">Link marjı = (ulaşılan eşik) − (gerekli eşik)</span>
+    <p>Gürültü bant genişliği Nyquist yaklaşımıyla ≈ R<sub>s</sub> alınır. Eşik standarda göre değişir ve değerler koda gömülüdür:</p>
+    <p><strong>DVB-S</strong> (QPSK + Viterbi iç kod + RS(204,188) dış kod): hedef <strong>E<sub>b</sub>/N₀</strong>'dır (BER = 2×10⁻⁴ Viterbi sonrası, RS sonrası QEF). Net spektral verim S<sub>eff</sub> = 2·r<sub>iç</sub>·(188/204). Marj E<sub>b</sub>/N₀ üzerinden hesaplanır.</p>
+    <p><strong>DVB-S2</strong> (ETSI EN 302 307, FECFRAME = 64800): hedef <strong>E<sub>s</sub>/N₀</strong>'dır (ideal AWGN değerleri). S<sub>eff</sub> doğrudan ModCod tablosundan gelir; E<sub>b</sub>/N₀ = E<sub>s</sub>/N₀ − 10·log₁₀(S<sub>eff</sub>). Marj E<sub>s</sub>/N₀ üzerinden hesaplanır.</p>
+    <p><strong>Manuel</strong> modda S<sub>eff</sub> ve eşiği elle girer, marjın E<sub>s</sub>/N₀ mı E<sub>b</sub>/N₀ mı tabanlı olacağını seçersin.</p>
+  </div>
+</details>
+
+<footer>
+  <p>Hesaplamalar standart RF/uydu mühendisliği denklemlerine dayanır ve bilinen ders kitabı yaklaşımlarıyla uyumludur. Atmosferik ve yağmur kayıpları burada tek bir toplam giriş olarak alınır; ITU-R modelleri (P.618, P.676, P.840 vb.) ile ayrıntılı hesap bu araç kapsamında değildir, ilgili kayıpları kendiniz girersiniz. Yalnızca eğitim ve ön tasarım amaçlıdır.</p>
+</footer>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const log10=x=>Math.log(x)/Math.LN10;
+const dB=x=>10*log10(x);
+const rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
+
+const RE=6378.137, RGEO=42164.0, C=2.99792458e8, K_DB=-228.6;
+
+/* ---- Embedded modcod tables ---- */
+// DVB-S2: spectral efficiency + ideal Es/N0 (FECFRAME 64800), ETSI EN 302 307-1 Table.
+const DVBS2=[
+ ['QPSK 1/4',0.490243,-2.35],['QPSK 1/3',0.656448,-1.24],['QPSK 2/5',0.789412,-0.30],
+ ['QPSK 1/2',0.988858,1.00],['QPSK 3/5',1.188304,2.23],['QPSK 2/3',1.322253,3.10],
+ ['QPSK 3/4',1.487473,4.03],['QPSK 4/5',1.587196,4.68],['QPSK 5/6',1.654663,5.18],
+ ['QPSK 8/9',1.766451,6.20],['QPSK 9/10',1.788612,6.42],
+ ['8PSK 3/5',1.779991,5.50],['8PSK 2/3',1.980636,6.62],['8PSK 3/4',2.228124,7.91],
+ ['8PSK 5/6',2.478562,9.35],['8PSK 8/9',2.646012,10.69],['8PSK 9/10',2.679207,10.98],
+ ['16APSK 2/3',2.637201,8.97],['16APSK 3/4',2.966728,10.21],['16APSK 4/5',3.165623,11.03],
+ ['16APSK 5/6',3.300184,11.61],['16APSK 8/9',3.523143,12.89],['16APSK 9/10',3.567342,13.13],
+ ['32APSK 3/4',3.703295,12.73],['32APSK 4/5',3.951571,13.64],['32APSK 5/6',4.119540,14.28],
+ ['32APSK 8/9',4.397854,15.69],['32APSK 9/10',4.453027,16.05]
+];
+// DVB-S: QPSK + Viterbi inner code + RS(204,188) outer. Target is Eb/N0 (BER 2e-4 after Viterbi, QEF after RS).
+// Net spectral efficiency Seff = 2 (QPSK) * inner_rate * 188/204.
+const RS_OH=188/204;
+const DVBS=[
+ ['1/2',1/2,4.5],['2/3',2/3,5.0],['3/4',3/4,5.5],['5/6',5/6,6.0],['7/8',7/8,6.4]
+].map(([l,r,eb])=>[l, 2*r*RS_OH, eb, r]);
+
+function fillModcod(){
+  const std=$('standard').value, sel=$('modcod');
+  sel.innerHTML='';
+  if(std==='manual'){ $('rowModcod').style.display='none'; $('rowBasis').style.display=''; return; }
+  $('rowModcod').style.display=''; $('rowBasis').style.display='none';
+  const list = std==='dvbs2'?DVBS2:DVBS;
+  list.forEach((row,i)=>{
+    const o=document.createElement('option'); o.value=i;
+    o.textContent = std==='dvbs2'
+      ? `${row[0]}  ·  η=${row[1].toFixed(3)}  ·  ${row[2].toFixed(2)} dB`
+      : `QPSK ${row[0]}  ·  η=${row[1].toFixed(3)}  ·  ${row[2].toFixed(1)} dB`;
+    sel.appendChild(o);
+  });
+  sel.selectedIndex = std==='dvbs2'?13:2;   // default 8PSK 3/4  /  QPSK 3/4
+  applyModcod();
+}
+function applyModcod(){
+  const std=$('standard').value;
+  const ro = std!=='manual';
+  $('seff').readOnly=ro; $('target').readOnly=ro;
+  $('seff').style.opacity=ro?0.7:1; $('target').style.opacity=ro?0.7:1;
+  if(std==='manual'){
+    $('stdTag').textContent='MANUEL';
+    $('modNote').textContent='';
+    const eb=$('basis').value==='eb';
+    $('targetLabel').innerHTML = eb?'Gerekli E<sub>b</sub>/N₀':'Gerekli E<sub>s</sub>/N₀';
+    $('basisNote').textContent = 'marj '+(eb?'Eb/N₀':'Eₛ/N₀')+' tabanlı';
+  }else{
+    const list = std==='dvbs2'?DVBS2:DVBS;
+    const row=list[+$('modcod').value];
+    $('seff').value=row[1].toFixed(6);
+    $('target').value=row[2];
+    if(std==='dvbs2'){
+      $('stdTag').textContent='DVB-S2';
+      $('targetLabel').innerHTML='Gerekli E<sub>s</sub>/N₀';
+      $('basisNote').textContent='marj Eₛ/N₀ tabanlı';
+      $('modNote').textContent='mod · kod oranı';
+    }else{
+      $('stdTag').textContent='DVB-S';
+      $('targetLabel').innerHTML='Gerekli E<sub>b</sub>/N₀';
+      $('basisNote').textContent='marj Eb/N₀ tabanlı';
+      $('modNote').textContent='QPSK · iç kod oranı';
+    }
+  }
+}
+function activeBasis(){
+  const std=$('standard').value;
+  if(std==='dvbs2') return 'es';
+  if(std==='dvbs')  return 'eb';
+  return $('basis').value;
+}
+
+function geometry(latEs,lonEs,lonSat){
+  const phi=rad(latEs), le=rad(lonEs), ls=rad(lonSat);
+  // ECEF (spherical)
+  const s=[RE*Math.cos(phi)*Math.cos(le), RE*Math.cos(phi)*Math.sin(le), RE*Math.sin(phi)];
+  const t=[RGEO*Math.cos(ls), RGEO*Math.sin(ls), 0];
+  const d=[t[0]-s[0], t[1]-s[1], t[2]-s[2]];
+  // ENU basis at station
+  const east =[-Math.sin(le), Math.cos(le), 0];
+  const north=[-Math.sin(phi)*Math.cos(le), -Math.sin(phi)*Math.sin(le), Math.cos(phi)];
+  const up   =[ Math.cos(phi)*Math.cos(le),  Math.cos(phi)*Math.sin(le), Math.sin(phi)];
+  const e=d[0]*east[0]+d[1]*east[1]+d[2]*east[2];
+  const n=d[0]*north[0]+d[1]*north[1]+d[2]*north[2];
+  const u=d[0]*up[0]+d[1]*up[1]+d[2]*up[2];
+  const range=Math.sqrt(e*e+n*n+u*u);
+  const el=deg(Math.atan2(u, Math.sqrt(e*e+n*n)));
+  let az=deg(Math.atan2(e, n)); if(az<0) az+=360;
+  return {el,az,range};
+}
+function gainDbi(D,eff,fGHz){
+  const lambda=C/(fGHz*1e9);
+  return dB(eff*Math.pow(Math.PI*D/lambda,2));
+}
+function fspl(dKm,fGHz){ return 92.45+20*log10(dKm)+20*log10(fGHz); }
+
+function fmt(x,n=1){ return (x>=0&&!Object.is(x,-0)?'':'')+x.toFixed(n); }
+
+function calc(){
+  // inputs
+  const latEs=+$('esLat').value, lonEs=+$('esLon').value, lonSat=+$('satLon').value;
+  const fUp=+$('fUp').value, hpaW=+$('hpaW').value, feedUp=+$('feedUp').value;
+  const D=+$('dish').value, eff=+$('eff').value/100, satGT=+$('satGT').value, lossUp=+$('lossUp').value;
+  const sfdReq=+$('sfdReq').value;
+  const Ddn=+$('dishDn').value, effDn=+$('effDn').value/100;
+  const fDn=+$('fDn').value, satEirp=+$('satEirp').value, tsys=+$('tsys').value, lossDn=+$('lossDn').value;
+  const Rs=+$('symRate').value*1e6, alpha=+$('rolloff').value;
+  const seff=+$('seff').value, target=+$('target').value;
+  const basis=activeBasis(), ciOn=$('ciOn').checked, ciVal=+$('ciVal').value;
+
+  // geometry
+  const g=geometry(latEs,lonEs,lonSat);
+  const visible=g.el>0;
+
+  // antenna gains
+  const Gtx=gainDbi(D,eff,fUp);
+  const Grx=gainDbi(Ddn,effDn,fDn);
+  const gtEs=Grx-10*log10(tsys);
+
+  // EIRP
+  const phpa=10*log10(hpaW);
+  const eirpUp=phpa-feedUp+Gtx;
+
+  // power flux density at satellite & SFD margin
+  // spreading loss = 10log10(4*pi*d^2), d in metres
+  const spread=10*log10(4*Math.PI*Math.pow(g.range*1000,2));
+  const pfd=eirpUp-spread-lossUp;          // dBW/m^2 reaching the satellite
+  const sfdMargin=pfd-sfdReq;              // + : drives toward saturation, - : input back-off
+
+  // path loss
+  const Lup=fspl(g.range,fUp);
+  const Ldn=fspl(g.range,fDn);
+
+  // C/N0
+  const cn0Up=eirpUp-Lup-lossUp+satGT-K_DB;
+  const cn0Dn=satEirp-Ldn-lossDn+gtEs-K_DB;
+
+  // bandwidth & rates
+  const Rb=Rs*seff;            // information bit rate = symbol rate x net spectral efficiency
+  const Bocc=Rs*(1+alpha);
+
+  // interference C/I0
+  let sum=Math.pow(10,-cn0Up/10)+Math.pow(10,-cn0Dn/10);
+  if(ciOn){ const ci0=ciVal+10*log10(Rs); sum+=Math.pow(10,-ci0/10); }
+  const cn0Tot=-10*log10(sum);
+
+  const esn0=cn0Tot-10*log10(Rs);
+  const ebn0=cn0Tot-10*log10(Rb);
+  const cn=cn0Tot-10*log10(Bocc);
+  const cnUp=cn0Up-10*log10(Bocc);
+  const cnDn=cn0Dn-10*log10(Bocc);
+  const achieved = basis==='eb'? ebn0 : esn0;
+  const margin = achieved - target;
+
+  // ---- write geometry / derived ----
+  $('oEl').textContent   = visible? fmt(g.el,1) : 'görünmez';
+  $('oAz').textContent   = fmt(g.az,1);
+  $('oRange').textContent= Math.round(g.range).toLocaleString('tr-TR');
+  $('oEirpUp').textContent= fmt(eirpUp,1);
+  $('oSfd').textContent   = fmt(pfd,2);
+  $('oSfdMargin').textContent = (sfdMargin>=0?'+':'')+fmt(sfdMargin,2);
+  $('oSfdMargin').style.color = sfdMargin>=0?'var(--good)':'var(--bad)';
+  $('oGrx').textContent  = fmt(Grx,1);
+  $('oGtEs').textContent = fmt(gtEs,1);
+  $('oEl').style.color = visible?'var(--cyan)':'var(--bad)';
+
+  // ---- diagram ----
+  $('dSatGT').textContent=fmt(satGT,1);
+  $('dSatEirp').textContent=fmt(satEirp,0);
+  $('dFsplUp').textContent=' '+fmt(Lup,1);
+  $('dFsplDn').textContent=' '+fmt(Ldn,1);
+  $('dEirpUp').textContent=fmt(eirpUp,1);
+  $('dGtEs').textContent=fmt(gtEs,1);
+
+  // ---- readout ----
+  $('rCn0Up').textContent=fmt(cn0Up,1);
+  $('rCn0Dn').textContent=fmt(cn0Dn,1);
+  $('rCn0Tot').textContent=fmt(cn0Tot,1);
+  $('rCnUp').textContent=fmt(cnUp,1);
+  $('rCnDn').textContent=fmt(cnDn,1);
+  $('rCn').textContent=fmt(cn,1);
+  $('rEs').textContent=fmt(esn0,1);
+  $('rEb').textContent=fmt(ebn0,1);
+  $('rRb').textContent=fmt(Rb/1e6,2);
+  $('rBw').textContent=fmt(Bocc/1e6,2);
+
+  // ---- verdict ----
+  const v=$('verdict');
+  const ok = visible && margin>=0;
+  v.className='verdict '+(ok?'ok':'no');
+  $('vMargin').textContent=(margin>=0?'+':'')+fmt(margin,1);
+  const bLab = basis==='eb'?'Eb/N₀':'Eₛ/N₀';
+  $('vLabel').textContent = !visible ? 'Uydu ufuk altında — bağlantı yok'
+                          : (margin>=0 ? 'Link marjı ('+bLab+' tabanlı)'
+                                       : 'Link marjı ('+bLab+' tabanlı) — yetersiz');
+  $('vSub').textContent = visible
+    ? `gerekli ${fmt(target,2)} dB · ulaşılan ${fmt(achieved,2)} dB`
+    : 'uydu görüş hattında değil';
+
+  // ---- waterfall ----
+  const rows=[
+    ['EIRP', eirpUp, satEirp, 'up','dn'],
+    ['Serbest uzay yol kaybı', -Lup, -Ldn,'up','dn'],
+    ['Atmosfer/yağmur/diğer', -lossUp, -lossDn,'up','dn'],
+    ['G/T', satGT, gtEs,'up','dn'],
+    ['− Boltzmann (k)', -K_DB, -K_DB,'up','dn'],
+  ];
+  let html='';
+  for(const [name,u,d] of rows){
+    html+=`<tr><td>${name}</td><td class="up">${u>=0?'+':''}${fmt(u,1)}</td><td class="dn">${d>=0?'+':''}${fmt(d,1)}</td></tr>`;
+  }
+  html+=`<tr class="subtotal"><td>C/N₀</td><td class="up">${fmt(cn0Up,1)}</td><td class="dn">${fmt(cn0Dn,1)}</td></tr>`;
+  $('wfBody').innerHTML=html;
+}
+
+$('standard').addEventListener('change',()=>{ fillModcod(); calc(); });
+$('modcod').addEventListener('change',()=>{ applyModcod(); calc(); });
+$('basis').addEventListener('change',()=>{ applyModcod(); calc(); });
+document.querySelectorAll('input,select').forEach(el=>{
+  el.addEventListener('input',calc); el.addEventListener('change',calc);
+});
+fillModcod();
+calc();
+</script>
+</body>
+</html>
