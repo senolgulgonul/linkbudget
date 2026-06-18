@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Uydu Link Budget Hesaplayıcı</title>
+<title>Satellite Link Budget Calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -123,91 +123,91 @@ footer a{color:var(--muted)}
 <div class="wrap">
 
 <header>
-  <p class="eyebrow">GEO · Uplink / Downlink · dB Bütçesi</p>
-  <h1>Uydu Link Budget Hesaplayıcı</h1>
-  <p class="sub">Bir GEO uydu bağlantısının uçtan uca dB bütçesini hesaplar: yer istasyonu EIRP'si, serbest uzay yol kaybı, G/T, taşıyıcı/gürültü oranları ve link marjı. Tüm değerler girişler değiştikçe anında güncellenir. Geometri bloğu enlem/boylamdan elevasyon, azimut ve eğik mesafeyi türetir.</p>
+  <p class="eyebrow">GEO · Uplink / Downlink · dB Budget</p>
+  <h1>Satellite Link Budget Calculator</h1>
+  <p class="sub">Computes the end-to-end dB budget of a GEO satellite link: earth-station EIRP, free space path loss, G/T, carrier-to-noise ratios and link margin. Everything updates live as you change the inputs. The geometry block derives elevation, azimuth and slant range from latitude/longitude.</p>
 </header>
 
 <div class="grid">
 
   <!-- GEOMETRY -->
   <div class="card">
-    <h2>Geometri <span class="tag gm">GEO</span></h2>
-    <div class="field"><label>Yer ist. enlemi <small>+ kuzey</small></label><input type="number" id="esLat" value="40" step="0.1"><span class="unit">°</span></div>
-    <div class="field"><label>Yer ist. boylamı <small>+ doğu</small></label><input type="number" id="esLon" value="33" step="0.1"><span class="unit">°</span></div>
-    <div class="field"><label>Uydu boylamı <small>GEO, + doğu</small></label><input type="number" id="satLon" value="42" step="0.1"><span class="unit">°</span></div>
-    <div class="field"><label>Elevasyon açısı</label><span class="derived" id="oEl">–</span><span class="unit">°</span></div>
-    <div class="field"><label>Azimut (kuzeyden)</label><span class="derived" id="oAz">–</span><span class="unit">°</span></div>
-    <div class="field"><label>Eğik mesafe</label><span class="derived" id="oRange">–</span><span class="unit">km</span></div>
+    <h2>Geometry <span class="tag gm">GEO</span></h2>
+    <div class="field"><label>Earth stn. latitude <small>+ north</small></label><input type="number" id="esLat" value="40" step="0.1"><span class="unit">°</span></div>
+    <div class="field"><label>Earth stn. longitude <small>+ east</small></label><input type="number" id="esLon" value="33" step="0.1"><span class="unit">°</span></div>
+    <div class="field"><label>Satellite longitude <small>GEO, + east</small></label><input type="number" id="satLon" value="42" step="0.1"><span class="unit">°</span></div>
+    <div class="field"><label>Elevation angle</label><span class="derived" id="oEl">–</span><span class="unit">°</span></div>
+    <div class="field"><label>Azimuth (from north)</label><span class="derived" id="oAz">–</span><span class="unit">°</span></div>
+    <div class="field"><label>Slant range</label><span class="derived" id="oRange">–</span><span class="unit">km</span></div>
   </div>
 
   <!-- CARRIER / MODEM -->
   <div class="card">
-    <h2>Taşıyıcı &amp; Modem <span class="tag gm" id="stdTag">DVB-S2</span></h2>
-    <div class="field"><label>Sembol hızı (R<sub>s</sub>)</label><input type="number" id="symRate" value="30" step="0.1"><span class="unit">MBd</span></div>
+    <h2>Carrier &amp; Modem <span class="tag gm" id="stdTag">DVB-S2</span></h2>
+    <div class="field"><label>Symbol rate (R<sub>s</sub>)</label><input type="number" id="symRate" value="30" step="0.1"><span class="unit">MBd</span></div>
     <div class="field"><label>Roll-off (α)</label><input type="number" id="rolloff" value="0.35" step="0.05"><span class="unit"></span></div>
-    <div class="field"><label>Standart <small id="basisNote">marj Eₛ/N₀ tabanlı</small></label>
+    <div class="field"><label>Standard <small id="basisNote">margin on Eₛ/N₀</small></label>
       <select id="standard">
         <option value="dvbs2" selected>DVB-S2 · Es/N₀</option>
         <option value="dvbs">DVB-S · Eb/N₀</option>
-        <option value="manual">Manuel</option>
+        <option value="manual">Manual</option>
       </select>
     </div>
-    <div class="field" id="rowModcod"><label>ModCod <small id="modNote">mod · kod oranı</small></label>
+    <div class="field" id="rowModcod"><label>ModCod <small id="modNote">mod · code rate</small></label>
       <select id="modcod"></select>
     </div>
-    <div class="field"><label>Spektral verim (S<sub>eff</sub>) <small>bilgi bit/sym</small></label><input type="number" id="seff" value="2.228124" step="0.0001"><span class="unit"></span></div>
-    <div class="field"><label id="targetLabel">Gerekli E<sub>s</sub>/N₀</label><input type="number" id="target" value="7.91" step="0.01"><span class="unit">dB</span></div>
-    <div class="field" id="rowBasis" style="display:none"><label>Marj temeli</label>
+    <div class="field"><label>Spectral eff. (S<sub>eff</sub>) <small>info bit/sym</small></label><input type="number" id="seff" value="2.228124" step="0.0001"><span class="unit"></span></div>
+    <div class="field"><label id="targetLabel">Required E<sub>s</sub>/N₀</label><input type="number" id="target" value="7.91" step="0.01"><span class="unit">dB</span></div>
+    <div class="field" id="rowBasis" style="display:none"><label>Margin basis</label>
       <select id="basis">
         <option value="es">Eₛ/N₀</option>
         <option value="eb">E_b/N₀</option>
       </select>
     </div>
-    <div class="field"><label class="toggle"><input type="checkbox" id="ciOn"> Girişim ekle (C/I)</label><input type="number" id="ciVal" value="20" step="0.5"><span class="unit">dB</span></div>
+    <div class="field"><label class="toggle"><input type="checkbox" id="ciOn"> Add interference (C/I)</label><input type="number" id="ciVal" value="20" step="0.5"><span class="unit">dB</span></div>
   </div>
 
   <!-- UPLINK -->
   <div class="card">
-    <h2>Uplink (yer → uydu) <span class="tag up">↑</span></h2>
-    <div class="field"><label>Uplink frekansı</label><input type="number" id="fUp" value="14" step="0.05"><span class="unit">GHz</span></div>
-    <div class="field"><label>HPA çıkış gücü</label><input type="number" id="hpaW" value="200" step="1"><span class="unit">W</span></div>
-    <div class="field"><label>Besleme/dallanma kaybı</label><input type="number" id="feedUp" value="0" step="0.1"><span class="unit">dB</span></div>
-    <div class="field"><label>TX anten çapı (D<sub>tx</sub>)</label><input type="number" id="dish" value="1.2" step="0.1"><span class="unit">m</span></div>
-    <div class="field"><label>TX anten verimi (η<sub>tx</sub>)</label><input type="number" id="eff" value="65" step="1"><span class="unit">%</span></div>
-    <div class="field"><label>Uydu G/T</label><input type="number" id="satGT" value="10" step="0.5"><span class="unit">dB/K</span></div>
-    <div class="field"><label>Atmosfer + yağmur + diğer</label><input type="number" id="lossUp" value="0" step="0.1"><span class="unit">dB</span></div>
-    <div class="field"><label>Yer ist. EIRP</label><span class="derived" id="oEirpUp">–</span><span class="unit">dBW</span></div>
-    <div class="field"><label>Gerekli SFD <small>uydu doyum akı yoğ.</small></label><input type="number" id="sfdReq" value="-90" step="0.5"><span class="unit">dBW/m²</span></div>
-    <div class="field"><label>Uyduya ulaşan PFD</label><span class="derived" id="oSfd">–</span><span class="unit">dBW/m²</span></div>
-    <div class="field"><label>SFD marjı <small>+ doyum, − geri-çekme</small></label><span class="derived" id="oSfdMargin">–</span><span class="unit">dB</span></div>
+    <h2>Uplink (earth → sat) <span class="tag up">↑</span></h2>
+    <div class="field"><label>Uplink frequency</label><input type="number" id="fUp" value="14" step="0.05"><span class="unit">GHz</span></div>
+    <div class="field"><label>HPA output power</label><input type="number" id="hpaW" value="200" step="1"><span class="unit">W</span></div>
+    <div class="field"><label>Feeder/branching loss</label><input type="number" id="feedUp" value="0" step="0.1"><span class="unit">dB</span></div>
+    <div class="field"><label>TX antenna dia. (D<sub>tx</sub>)</label><input type="number" id="dish" value="1.2" step="0.1"><span class="unit">m</span></div>
+    <div class="field"><label>TX antenna eff. (η<sub>tx</sub>)</label><input type="number" id="eff" value="65" step="1"><span class="unit">%</span></div>
+    <div class="field"><label>Satellite G/T</label><input type="number" id="satGT" value="10" step="0.5"><span class="unit">dB/K</span></div>
+    <div class="field"><label>Atmosphere + rain + other</label><input type="number" id="lossUp" value="0" step="0.1"><span class="unit">dB</span></div>
+    <div class="field"><label>Earth stn. EIRP</label><span class="derived" id="oEirpUp">–</span><span class="unit">dBW</span></div>
+    <div class="field"><label>Required SFD <small>sat. saturation flux</small></label><input type="number" id="sfdReq" value="-90" step="0.5"><span class="unit">dBW/m²</span></div>
+    <div class="field"><label>PFD at satellite</label><span class="derived" id="oSfd">–</span><span class="unit">dBW/m²</span></div>
+    <div class="field"><label>SFD margin <small>+ saturation, − back-off</small></label><span class="derived" id="oSfdMargin">–</span><span class="unit">dB</span></div>
   </div>
 
   <!-- DOWNLINK -->
   <div class="card">
-    <h2>Downlink (uydu → yer) <span class="tag dn">↓</span></h2>
-    <div class="field"><label>Downlink frekansı</label><input type="number" id="fDn" value="12" step="0.05"><span class="unit">GHz</span></div>
-    <div class="field"><label>Uydu EIRP <small>taşıyıcı başına</small></label><input type="number" id="satEirp" value="44" step="0.5"><span class="unit">dBW</span></div>
-    <div class="field"><label>RX anten çapı (D<sub>rx</sub>)</label><input type="number" id="dishDn" value="0.6" step="0.1"><span class="unit">m</span></div>
-    <div class="field"><label>RX anten verimi (η<sub>rx</sub>)</label><input type="number" id="effDn" value="65" step="1"><span class="unit">%</span></div>
-    <div class="field"><label>Yer ist. sistem sıcaklığı (T<sub>sys</sub>)</label><input type="number" id="tsys" value="125" step="5"><span class="unit">K</span></div>
-    <div class="field"><label>Atmosfer + yağmur + diğer</label><input type="number" id="lossDn" value="0" step="0.1"><span class="unit">dB</span></div>
-    <div class="field"><label>Yer ist. RX kazancı</label><span class="derived" id="oGrx">–</span><span class="unit">dBi</span></div>
-    <div class="field"><label>Yer ist. G/T</label><span class="derived" id="oGtEs">–</span><span class="unit">dB/K</span></div>
+    <h2>Downlink (sat → earth) <span class="tag dn">↓</span></h2>
+    <div class="field"><label>Downlink frequency</label><input type="number" id="fDn" value="12" step="0.05"><span class="unit">GHz</span></div>
+    <div class="field"><label>Satellite EIRP <small>per carrier</small></label><input type="number" id="satEirp" value="44" step="0.5"><span class="unit">dBW</span></div>
+    <div class="field"><label>RX antenna dia. (D<sub>rx</sub>)</label><input type="number" id="dishDn" value="0.6" step="0.1"><span class="unit">m</span></div>
+    <div class="field"><label>RX antenna eff. (η<sub>rx</sub>)</label><input type="number" id="effDn" value="65" step="1"><span class="unit">%</span></div>
+    <div class="field"><label>Earth stn. system temp. (T<sub>sys</sub>)</label><input type="number" id="tsys" value="125" step="5"><span class="unit">K</span></div>
+    <div class="field"><label>Atmosphere + rain + other</label><input type="number" id="lossDn" value="0" step="0.1"><span class="unit">dB</span></div>
+    <div class="field"><label>Earth stn. RX gain</label><span class="derived" id="oGrx">–</span><span class="unit">dBi</span></div>
+    <div class="field"><label>Earth stn. G/T</label><span class="derived" id="oGtEs">–</span><span class="unit">dB/K</span></div>
   </div>
 
 </div><!-- /grid -->
 
 <!-- PATH DIAGRAM -->
 <div class="card diagram">
-  <h2>Sinyal yolu</h2>
+  <h2>Signal path</h2>
   <svg viewBox="0 0 880 230" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">
     <!-- satellite -->
     <g transform="translate(440,30)">
       <rect x="-26" y="-14" width="52" height="28" rx="4" fill="#1D262F" stroke="#2A343F"/>
       <rect x="-46" y="-7" width="16" height="14" rx="2" fill="#222C35"/>
       <rect x="30" y="-7" width="16" height="14" rx="2" fill="#222C35"/>
-      <text x="0" y="4" fill="#E9ECEF" font-size="10" text-anchor="middle">UYDU</text>
+      <text x="0" y="4" fill="#E9ECEF" font-size="10" text-anchor="middle">SATELLITE</text>
       <text x="0" y="-22" fill="#8A949F" font-size="9" text-anchor="middle">G/T <tspan id="dSatGT" fill="#FFB12E">–</tspan> · EIRP <tspan id="dSatEirp" fill="#54CFE0">–</tspan></text>
     </g>
     <!-- uplink beam -->
@@ -222,14 +222,14 @@ footer a{color:var(--muted)}
     <g transform="translate(120,180)">
       <path d="M-20,0 L20,0 L13,28 L-13,28 Z" fill="#1D262F" stroke="#2A343F"/>
       <ellipse cx="0" cy="0" rx="20" ry="6" fill="#222C35" stroke="#2A343F"/>
-      <text x="0" y="46" fill="#E9ECEF" font-size="10" text-anchor="middle">TX İSTASYON</text>
+      <text x="0" y="46" fill="#E9ECEF" font-size="10" text-anchor="middle">TX STATION</text>
       <text x="0" y="60" fill="#8A949F" font-size="9" text-anchor="middle">EIRP <tspan id="dEirpUp" fill="#FFB12E">–</tspan> dBW</text>
     </g>
     <!-- RX ground station -->
     <g transform="translate(760,180)">
       <path d="M-20,0 L20,0 L13,28 L-13,28 Z" fill="#1D262F" stroke="#2A343F"/>
       <ellipse cx="0" cy="0" rx="20" ry="6" fill="#222C35" stroke="#2A343F"/>
-      <text x="0" y="46" fill="#E9ECEF" font-size="10" text-anchor="middle">RX İSTASYON</text>
+      <text x="0" y="46" fill="#E9ECEF" font-size="10" text-anchor="middle">RX STATION</text>
       <text x="0" y="60" fill="#8A949F" font-size="9" text-anchor="middle">G/T <tspan id="dGtEs" fill="#54CFE0">–</tspan> dB/K</text>
     </g>
   </svg>
@@ -237,23 +237,23 @@ footer a{color:var(--muted)}
 
 <!-- READOUT -->
 <div class="readout">
-  <h2>Sonuç paneli</h2>
+  <h2>Results</h2>
   <div class="metrics">
     <div class="metric"><div class="k">C/N₀ uplink</div><div class="v"><span id="rCn0Up">–</span> <small>dBHz</small></div></div>
     <div class="metric cyan"><div class="k">C/N₀ downlink</div><div class="v"><span id="rCn0Dn">–</span> <small>dBHz</small></div></div>
-    <div class="metric"><div class="k">C/N₀ toplam</div><div class="v"><span id="rCn0Tot">–</span> <small>dBHz</small></div></div>
-    <div class="metric cyan"><div class="k">İşgal edilen BW</div><div class="v"><span id="rBw">–</span> <small>MHz</small></div></div>
+    <div class="metric"><div class="k">C/N₀ total</div><div class="v"><span id="rCn0Tot">–</span> <small>dBHz</small></div></div>
+    <div class="metric cyan"><div class="k">Occupied BW</div><div class="v"><span id="rBw">–</span> <small>MHz</small></div></div>
     <div class="metric"><div class="k">C/N uplink</div><div class="v"><span id="rCnUp">–</span> <small>dB</small></div></div>
     <div class="metric cyan"><div class="k">C/N downlink</div><div class="v"><span id="rCnDn">–</span> <small>dB</small></div></div>
-    <div class="metric"><div class="k">C/N toplam</div><div class="v"><span id="rCn">–</span> <small>dB</small></div></div>
-    <div class="metric cyan"><div class="k">Bilgi hızı (R<sub>b</sub>)</div><div class="v"><span id="rRb">–</span> <small>Mbps</small></div></div>
-    <div class="metric"><div class="k">Eₛ/N₀ ulaşılan</div><div class="v"><span id="rEs">–</span> <small>dB</small></div></div>
-    <div class="metric cyan"><div class="k">Eb/N₀ ulaşılan</div><div class="v"><span id="rEb">–</span> <small>dB</small></div></div>
+    <div class="metric"><div class="k">C/N total</div><div class="v"><span id="rCn">–</span> <small>dB</small></div></div>
+    <div class="metric cyan"><div class="k">Info rate (R<sub>b</sub>)</div><div class="v"><span id="rRb">–</span> <small>Mbps</small></div></div>
+    <div class="metric"><div class="k">Eₛ/N₀ achieved</div><div class="v"><span id="rEs">–</span> <small>dB</small></div></div>
+    <div class="metric cyan"><div class="k">Eb/N₀ achieved</div><div class="v"><span id="rEb">–</span> <small>dB</small></div></div>
   </div>
   <div class="verdict ok" id="verdict">
     <div class="vside">
-      <span class="vlabel" id="vLabel">Link marjı</span>
-      <span class="vsub" id="vSub">gerekli – · ulaşılan –</span>
+      <span class="vlabel" id="vLabel">Link margin</span>
+      <span class="vsub" id="vSub">required – · achieved –</span>
     </div>
     <span class="vnum"><span id="vMargin">–</span> dB</span>
   </div>
@@ -261,54 +261,54 @@ footer a{color:var(--muted)}
 
 <!-- WATERFALL -->
 <div class="card table-card">
-  <h2>dB dökümü (waterfall)</h2>
+  <h2>dB breakdown (waterfall)</h2>
   <table>
-    <thead><tr><th>Terim</th><th>Uplink</th><th>Downlink</th></tr></thead>
+    <thead><tr><th>Term</th><th>Uplink</th><th>Downlink</th></tr></thead>
     <tbody id="wfBody"></tbody>
   </table>
-  <p class="note">Pozitif satırlar bütçeye eklenir, negatif satırlar kayıptır. C/N₀ = EIRP − L<sub>fs</sub> − L<sub>atm</sub> + G/T − k.</p>
+  <p class="note">Positive rows add to the budget, negative rows are losses. C/N₀ = EIRP − L<sub>fs</sub> − L<sub>atm</sub> + G/T − k.</p>
 </div>
 
 <!-- FORMULAS -->
 <details>
-  <summary>Kullanılan formüller ve varsayımlar</summary>
+  <summary>Formulas and assumptions</summary>
   <div class="body">
-    <p><strong>Geometri (küresel Dünya, GEO).</strong> Yer istasyonu ve uydu ECEF vektörlerinden yerel doğu-kuzey-yukarı (ENU) bileşenleri çıkarılır; elevasyon, azimut ve eğik mesafe bunlardan hesaplanır. R<sub>e</sub> = 6378.137 km, GEO yörünge yarıçapı = 42164 km. İstasyon yüksekliği ihmal edilir.</p>
+    <p><strong>Geometry (spherical Earth, GEO).</strong> Local east-north-up (ENU) components are derived from the earth-station and satellite ECEF vectors; elevation, azimuth and slant range follow from them. R<sub>e</sub> = 6378.137 km, GEO orbit radius = 42164 km. Station altitude is neglected.</p>
 
-    <p><strong>Anten kazancı.</strong></p>
+    <p><strong>Antenna gain.</strong></p>
     <span class="eq">G(dBi) = 10·log₁₀( η · (π·D·f / c)² )</span>
-    <p>D = çap (m), f = frekans (Hz), η = verim, c = 2.998×10⁸ m/s. Aynı çanak uplink ve downlink frekanslarında farklı kazanç verir.</p>
+    <p>D = diameter (m), f = frequency (Hz), η = efficiency, c = 2.998×10⁸ m/s. The same dish gives different gains at the uplink and downlink frequencies.</p>
 
     <p><strong>EIRP.</strong></p>
-    <span class="eq">EIRP = P<sub>HPA</sub>(dBW) − L<sub>besleme</sub> + G<sub>tx</sub></span>
+    <span class="eq">EIRP = P<sub>HPA</sub>(dBW) − L<sub>feeder</sub> + G<sub>tx</sub></span>
 
-    <p><strong>Uyduya ulaşan güç akı yoğunluğu (PFD) ve SFD marjı.</strong> Yayılım kaybı = 10·log₁₀(4π·d²), d metre cinsinden.</p>
-    <span class="eq">PFD = EIRP − 10·log₁₀(4π·d²) − L<sub>atm</sub>   ·   SFD marjı = PFD − SFD<sub>gerekli</sub></span>
-    <p>SFD<sub>gerekli</sub>, transponderı doyuma sürmek için gereken akı yoğunluğudur. Marj pozitifse uydu doyuma yaklaşır; negatifse o kadar dB giriş geri-çekmesi (input back-off) var demektir.</p>
+    <p><strong>Power flux density (PFD) at the satellite and SFD margin.</strong> Spreading loss = 10·log₁₀(4π·d²), with d in metres.</p>
+    <span class="eq">PFD = EIRP − 10·log₁₀(4π·d²) − L<sub>atm</sub>   ·   SFD margin = PFD − SFD<sub>req</sub></span>
+    <p>SFD<sub>req</sub> is the flux density needed to drive the transponder into saturation. A positive margin means the satellite is pushed toward saturation; a negative one means that many dB of input back-off.</p>
 
-    <p><strong>Serbest uzay yol kaybı (FSPL).</strong></p>
+    <p><strong>Free space path loss (FSPL).</strong></p>
     <span class="eq">L<sub>fs</sub>(dB) = 92.45 + 20·log₁₀(d<sub>km</sub>) + 20·log₁₀(f<sub>GHz</sub>)</span>
 
-    <p><strong>Taşıyıcı/gürültü yoğunluğu.</strong> Boltzmann sabiti k = −228.6 dBW/(K·Hz).</p>
+    <p><strong>Carrier-to-noise density.</strong> Boltzmann constant k = −228.6 dBW/(K·Hz).</p>
     <span class="eq">C/N₀(dBHz) = EIRP − L<sub>fs</sub> − L<sub>atm</sub> + (G/T) − k</span>
-    <p>Yer istasyonu G/T = G<sub>rx</sub> − 10·log₁₀(T<sub>sys</sub>). Uydu G/T doğrudan girilir.</p>
+    <p>Earth-station G/T = G<sub>rx</sub> − 10·log₁₀(T<sub>sys</sub>). Satellite G/T is entered directly.</p>
 
-    <p><strong>Bağlantıların birleştirilmesi.</strong> Uplink, downlink ve (varsa) girişim doğrusal alanda toplanır:</p>
-    <span class="eq">(C/N₀)<sub>top</sub> = −10·log₁₀( 10^(−C/N₀,up/10) + 10^(−C/N₀,dn/10) + 10^(−C/I₀/10) )</span>
-    <p>Girişim için C/I₀ = C/I + 10·log₁₀(B). Girişim kapalıyken bu terim ihmal edilir.</p>
+    <p><strong>Combining the links.</strong> Uplink, downlink and (if enabled) interference are summed in the linear domain:</p>
+    <span class="eq">(C/N₀)<sub>tot</sub> = −10·log₁₀( 10^(−C/N₀,up/10) + 10^(−C/N₀,dn/10) + 10^(−C/I₀/10) )</span>
+    <p>For interference C/I₀ = C/I + 10·log₁₀(B). When interference is off this term is dropped.</p>
 
-    <p><strong>Modem metrikleri.</strong> Sembol hızı R<sub>s</sub>, bilgi hızı R<sub>b</sub> = R<sub>s</sub>·log₂(M)·(kod oranı), işgal edilen bant B = R<sub>s</sub>·(1+α).</p>
+    <p><strong>Modem metrics.</strong> Symbol rate R<sub>s</sub>, info bit rate R<sub>b</sub> = R<sub>s</sub>·S<sub>eff</sub>, occupied bandwidth B = R<sub>s</sub>·(1+α).</p>
     <span class="eq">Eₛ/N₀ = C/N₀ − 10·log₁₀(R<sub>s</sub>)   ·   Eb/N₀ = C/N₀ − 10·log₁₀(R<sub>b</sub>)   ·   C/N = C/N₀ − 10·log₁₀(B)</span>
-    <span class="eq">Link marjı = (ulaşılan eşik) − (gerekli eşik)</span>
-    <p>Gürültü bant genişliği Nyquist yaklaşımıyla ≈ R<sub>s</sub> alınır. Eşik standarda göre değişir ve değerler koda gömülüdür:</p>
-    <p><strong>DVB-S</strong> (QPSK + Viterbi iç kod + RS(204,188) dış kod): hedef <strong>E<sub>b</sub>/N₀</strong>'dır (BER = 2×10⁻⁴ Viterbi sonrası, RS sonrası QEF). Net spektral verim S<sub>eff</sub> = 2·r<sub>iç</sub>·(188/204). Marj E<sub>b</sub>/N₀ üzerinden hesaplanır.</p>
-    <p><strong>DVB-S2</strong> (ETSI EN 302 307, FECFRAME = 64800): hedef <strong>E<sub>s</sub>/N₀</strong>'dır (ideal AWGN değerleri). S<sub>eff</sub> doğrudan ModCod tablosundan gelir; E<sub>b</sub>/N₀ = E<sub>s</sub>/N₀ − 10·log₁₀(S<sub>eff</sub>). Marj E<sub>s</sub>/N₀ üzerinden hesaplanır.</p>
-    <p><strong>Manuel</strong> modda S<sub>eff</sub> ve eşiği elle girer, marjın E<sub>s</sub>/N₀ mı E<sub>b</sub>/N₀ mı tabanlı olacağını seçersin.</p>
+    <span class="eq">Link margin = (achieved threshold) − (required threshold)</span>
+    <p>Noise bandwidth is taken as ≈ R<sub>s</sub> (Nyquist). The threshold depends on the standard and the values are embedded in the code:</p>
+    <p><strong>DVB-S</strong> (QPSK + Viterbi inner code + RS(204,188) outer code): the target is <strong>E<sub>b</sub>/N₀</strong> (BER = 2×10⁻⁴ after Viterbi, QEF after RS). Net spectral efficiency S<sub>eff</sub> = 2·r<sub>inner</sub>·(188/204). Margin is computed on E<sub>b</sub>/N₀.</p>
+    <p><strong>DVB-S2</strong> (ETSI EN 302 307, FECFRAME = 64800): the target is <strong>E<sub>s</sub>/N₀</strong> (ideal AWGN values). S<sub>eff</sub> comes straight from the ModCod table; E<sub>b</sub>/N₀ = E<sub>s</sub>/N₀ − 10·log₁₀(S<sub>eff</sub>). Margin is computed on E<sub>s</sub>/N₀.</p>
+    <p><strong>Manual</strong> mode lets you enter S<sub>eff</sub> and the threshold yourself, and choose whether the margin is based on E<sub>s</sub>/N₀ or E<sub>b</sub>/N₀.</p>
   </div>
 </details>
 
 <footer>
-  <p>Hesaplamalar standart RF/uydu mühendisliği denklemlerine dayanır ve bilinen ders kitabı yaklaşımlarıyla uyumludur. Atmosferik ve yağmur kayıpları burada tek bir toplam giriş olarak alınır; ITU-R modelleri (P.618, P.676, P.840 vb.) ile ayrıntılı hesap bu araç kapsamında değildir, ilgili kayıpları kendiniz girersiniz. Yalnızca eğitim ve ön tasarım amaçlıdır.</p>
+  <p>Calculations are based on standard RF/satellite engineering equations and agree with common textbook approaches. Atmospheric and rain losses are taken here as a single lumped input; detailed ITU-R models (P.618, P.676, P.840, etc.) are out of scope, so you enter the relevant losses yourself. For education and preliminary design only.</p>
 </footer>
 
 </div>
@@ -368,7 +368,7 @@ function applyModcod(){
     $('modNote').textContent='';
     const eb=$('basis').value==='eb';
     $('targetLabel').innerHTML = eb?'Gerekli E<sub>b</sub>/N₀':'Gerekli E<sub>s</sub>/N₀';
-    $('basisNote').textContent = 'marj '+(eb?'Eb/N₀':'Eₛ/N₀')+' tabanlı';
+    $('basisNote').textContent = 'margin on '+(eb?'Eb/N₀':'Eₛ/N₀');
   }else{
     const list = std==='dvbs2'?DVBS2:DVBS;
     const row=list[+$('modcod').value];
@@ -377,13 +377,13 @@ function applyModcod(){
     if(std==='dvbs2'){
       $('stdTag').textContent='DVB-S2';
       $('targetLabel').innerHTML='Gerekli E<sub>s</sub>/N₀';
-      $('basisNote').textContent='marj Eₛ/N₀ tabanlı';
-      $('modNote').textContent='mod · kod oranı';
+      $('basisNote').textContent='margin on Eₛ/N₀';
+      $('modNote').textContent='mod · code rate';
     }else{
       $('stdTag').textContent='DVB-S';
       $('targetLabel').innerHTML='Gerekli E<sub>b</sub>/N₀';
-      $('basisNote').textContent='marj Eb/N₀ tabanlı';
-      $('modNote').textContent='QPSK · iç kod oranı';
+      $('basisNote').textContent='margin on Eb/N₀';
+      $('modNote').textContent='QPSK · inner code rate';
     }
   }
 }
@@ -477,9 +477,9 @@ function calc(){
   const margin = achieved - target;
 
   // ---- write geometry / derived ----
-  $('oEl').textContent   = visible? fmt(g.el,1) : 'görünmez';
+  $('oEl').textContent   = visible? fmt(g.el,1) : 'not visible';
   $('oAz').textContent   = fmt(g.az,1);
-  $('oRange').textContent= Math.round(g.range).toLocaleString('tr-TR');
+  $('oRange').textContent= Math.round(g.range).toLocaleString('en-US');
   $('oEirpUp').textContent= fmt(eirpUp,1);
   $('oSfd').textContent   = fmt(pfd,2);
   $('oSfdMargin').textContent = (sfdMargin>=0?'+':'')+fmt(sfdMargin,2);
@@ -514,18 +514,18 @@ function calc(){
   v.className='verdict '+(ok?'ok':'no');
   $('vMargin').textContent=(margin>=0?'+':'')+fmt(margin,1);
   const bLab = basis==='eb'?'Eb/N₀':'Eₛ/N₀';
-  $('vLabel').textContent = !visible ? 'Uydu ufuk altında — bağlantı yok'
-                          : (margin>=0 ? 'Link marjı ('+bLab+' tabanlı)'
-                                       : 'Link marjı ('+bLab+' tabanlı) — yetersiz');
+  $('vLabel').textContent = !visible ? 'Satellite below horizon, no link'
+                          : (margin>=0 ? 'Link margin (on '+bLab+')'
+                                       : 'Link margin (on '+bLab+'), insufficient');
   $('vSub').textContent = visible
-    ? `gerekli ${fmt(target,2)} dB · ulaşılan ${fmt(achieved,2)} dB`
-    : 'uydu görüş hattında değil';
+    ? `required ${fmt(target,2)} dB · achieved ${fmt(achieved,2)} dB`
+    : 'satellite not in line of sight';
 
   // ---- waterfall ----
   const rows=[
     ['EIRP', eirpUp, satEirp, 'up','dn'],
-    ['Serbest uzay yol kaybı', -Lup, -Ldn,'up','dn'],
-    ['Atmosfer/yağmur/diğer', -lossUp, -lossDn,'up','dn'],
+    ['Free space path loss', -Lup, -Ldn,'up','dn'],
+    ['Atmosphere/rain/other', -lossUp, -lossDn,'up','dn'],
     ['G/T', satGT, gtEs,'up','dn'],
     ['− Boltzmann (k)', -K_DB, -K_DB,'up','dn'],
   ];
